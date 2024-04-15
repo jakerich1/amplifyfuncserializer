@@ -25,7 +25,7 @@ This package includes several scripts that can be run from the command line. Her
 
 ### Running the `depend` Script
 
-The `depend` script updates function dependencies in a configuration file based on provided serialization percentages and attributes. Please run this command from the directory containing the backend-config.json file.
+The `depend` script updates function dependencies in a configuration file based on provided serialization percentages and attributes. Please run this command from the directory containing the backend-config.json file. Once complete it will have generate a new file called `updated-backend-config.json`. This json file contains a new `function` object with the updated dependencies. Simply replace the old `function` object with the new one in the `backend-config.json` file. 
 
 #### How to Run
 
