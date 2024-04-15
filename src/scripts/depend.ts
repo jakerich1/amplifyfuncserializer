@@ -36,6 +36,7 @@ const findConfigFile = async () => {
   const percent = argv.serialization;
 
   console.log("serialization percentage:", percent);
+  console.log("attribute:", argv.attribute);
 
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
@@ -62,13 +63,20 @@ const processFunctions = async (
       serializationPercentage
     );
 
-    console.log("First function", findFirstFunction(updatedFunctions));
-    console.log("Last function", findLastFunctionInChain(updatedFunctions));
+    // console.log("updatedFunctins", updatedFunctions);
+
+    // console.log("First function", findFirstFunction(updatedFunctions));
+    // console.log("Last function", findLastFunctionInChain(updatedFunctions));
+
+    console.log("filePath", filePath);
 
     const newFilePath = path.join(
       path.dirname(filePath),
       "updated-backend-config.json"
     );
+
+    console.log("Writing updated functions to:", newFilePath);
+
     await fs.promises.writeFile(
       newFilePath,
       JSON.stringify({ function: updatedFunctions }, null, 2)
@@ -209,59 +217,6 @@ const checkForCircularDependencies = (
     }
   }
   return null;
-};
-
-const findFirstFunction = (functions: Functions): string => {
-  for (const key of Object.keys(functions)) {
-    if (!functions[key].dependsOn) {
-      return key;
-    }
-  }
-  throw new Error("No function without dependencies found.");
-};
-
-const findLastFunctionInChain = (functions: Functions): string => {
-  const dependenciesMap = new Map<string, string[]>();
-  for (const [key, value] of Object.entries(functions)) {
-    dependenciesMap.set(
-      key,
-      value.dependsOn
-        ?.filter((dep) => dep.category === "function")
-        .map((dep) => dep.resourceName) || []
-    );
-  }
-
-  const visited = new Map<string, string>();
-  const stack = new Map<string, string>();
-
-  const visit = (func: string): string | null => {
-    if (stack.has(func)) {
-      return func;
-    }
-    if (visited.has(func)) {
-      return null;
-    }
-
-    visited.set(func, func);
-    stack.set(func, func);
-    const neighbors = dependenciesMap.get(func);
-    if (neighbors) {
-      for (const neighbor of neighbors) {
-        const result = visit(neighbor);
-        if (result) return result;
-      }
-    }
-    stack.delete(func);
-    return null;
-  };
-
-  for (const key of Object.keys(functions)) {
-    const result = visit(key);
-    if (result) {
-      return result;
-    }
-  }
-  throw new Error("No function without dependencies found.");
 };
 
 findConfigFile();
