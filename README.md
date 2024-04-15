@@ -30,7 +30,7 @@ The `depend` script updates function dependencies in a configuration file based 
 #### How to Run
 
 ```bash
-npx run depend --serialization [percentage] --attribute [attributeName]
+npx depend --serialization [percentage] --attribute [attributeName]
 ```
 
 #### Options
