@@ -35,9 +35,6 @@ const findConfigFile = async () => {
   const filePath = path.join(currentDir, fileName);
   const percent = argv.serialization;
 
-  console.log("serialization percentage:", percent);
-  console.log("attribute:", argv.attribute);
-
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
     console.log("Found:", fileName);
@@ -62,13 +59,6 @@ const processFunctions = async (
       functions,
       serializationPercentage
     );
-
-    // console.log("updatedFunctins", updatedFunctions);
-
-    // console.log("First function", findFirstFunction(updatedFunctions));
-    // console.log("Last function", findLastFunctionInChain(updatedFunctions));
-
-    console.log("filePath", filePath);
 
     const newFilePath = path.join(
       path.dirname(filePath),
