@@ -17,6 +17,7 @@ Make sure Node.js is installed on your machine. Follow these steps to set up and
 2. Navigate to the directory containing the project.
 3. Run `npm install` to install the required dependencies.
 4. Execute `npm run build` to compile TypeScript files and minify the scripts.
+5. Execute `npm link` to make the scripts available globally.
 
 ## Usage
 
@@ -29,7 +30,7 @@ The `depend` script updates function dependencies in a configuration file based 
 #### How to Run
 
 ```bash
-npm run depend -- --serialization [percentage] --attribute [attributeName]
+npx run depend --serialization [percentage] --attribute [attributeName]
 ```
 
 #### Options
