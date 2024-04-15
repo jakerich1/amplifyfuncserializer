@@ -1,0 +1,28 @@
+{
+  "name": "amplifyfuncserializer",
+  "version": "1.0.0",
+  "description": "A project with multiple independent Node.js scripts",
+  "main": "dist/index.js",
+  "bin": {
+    "lef": "dist/scripts/lef.min.js",
+    "depend": "dist/scripts/depend.min.js"
+  },
+  "scripts": {
+    "build": "tsc && npm run minify",
+    "minify": "terser dist/scripts/lef.js -o dist/scripts/lef.min.js --compress --mangle && terser dist/scripts/depend.js -o dist/scripts/depend.min.js --compress --mangle",
+    "start": "node dist/index.js",
+    "lef": "node dist/scripts/lef.min.js",
+    "depend": "node dist/scripts/depend.min.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/yargs": "^17.0.32",
+    "terser": "^5.14.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "yargs": "^17.7.2"
+  }
+}
