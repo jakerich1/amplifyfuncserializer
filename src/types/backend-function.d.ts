@@ -4,7 +4,7 @@ type Dependency = {
   resourceName: string;
 };
 
-type ConfigItem = {
+export type ConfigItem = {
   build: boolean;
   dependsOn: Dependency[];
   providerPlugin: string;
@@ -12,3 +12,11 @@ type ConfigItem = {
 };
 
 export type Functions = Record<string, ConfigItem>;
+
+export type ParameterItem = {
+  Type: string;
+  Default?: string;
+  Description?: string;
+};
+
+export type Parameters = Record<string, ParameterItem>;
