@@ -96,7 +96,8 @@ const createFunctionalDependencies = (
   let dependencyFreeFunctions = keys.filter(
     (key) =>
       !functions[key].dependsOn ||
-      functions[key].dependsOn.every((dep) => dep.category !== "function")
+      functions[key].dependsOn.every((dep) => dep.category !== "function") ||
+      !key.endsWith("Layer")
   );
 
   const currentPercentage =
