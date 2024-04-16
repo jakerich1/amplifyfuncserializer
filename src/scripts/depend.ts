@@ -3,7 +3,11 @@ import fs from "fs";
 import path from "path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import type { Functions } from "../types/backend-function";
+import type {
+  Functions,
+  ConfigItem,
+  Parameters,
+} from "../types/backend-function";
 
 interface Args {
   serialization: number;
@@ -60,18 +64,14 @@ const processFunctions = async (
       serializationPercentage
     );
 
-    const newFilePath = path.join(
-      path.dirname(filePath),
-      "updated-backend-config.json"
-    );
+    json.function = updatedFunctions;
 
-    console.log("Writing updated functions to:", newFilePath);
+    console.log("Writing updated functions to:", filePath);
 
-    await fs.promises.writeFile(
-      newFilePath,
-      JSON.stringify({ function: updatedFunctions }, null, 2)
-    );
-    console.log("Updated functions written to:", newFilePath);
+    await fs.promises.writeFile(filePath, JSON.stringify(json, null, 2));
+    console.log("Updated functions written to:", filePath);
+
+    await updateIndividualTemplates(updatedFunctions);
   } catch (err) {
     if (err instanceof Error) {
       console.error("\x1b[31m%s\x1b[0m", "Error:", err.message);
@@ -207,6 +207,143 @@ const checkForCircularDependencies = (
     }
   }
   return null;
+};
+
+const updateIndividualTemplates = async (updatedFunctions: Functions) => {
+  const missingTemplates = [];
+
+  const keys = Object.keys(updatedFunctions);
+  for (const key of keys) {
+    const functionPath = path.join(process.cwd(), "function", key);
+    let templateFound = false;
+
+    try {
+      const files = await fs.promises.readdir(functionPath);
+      const templateFile = files.find((file) =>
+        file.endsWith("cloudformation-template.json")
+      );
+
+      if (templateFile) {
+        const templatePath = path.join(functionPath, templateFile);
+        const data = await fs.promises.readFile(templatePath, "utf8");
+        templateFound = true;
+      }
+    } catch (err) {
+      console.error("Error reading directory or file:", err);
+    }
+
+    if (!templateFound) {
+      missingTemplates.push(key);
+    }
+  }
+
+  if (missingTemplates.length > 0) {
+    console.error(
+      "\x1b[31m%s\x1b[0m",
+      "Error: Missing templates for functions:",
+      missingTemplates.join(", ")
+    );
+    return;
+  }
+
+  console.log("All function templates found.");
+
+  for (const key of keys) {
+    await processTemplate(key, updatedFunctions[key]);
+  }
+};
+
+// {
+//   "attributes": [
+//     "Name"
+//   ],
+//   "category": "function",
+//   "resourceName": "influenceIoCopyToElastic"
+// }
+
+const processTemplate = async (key: string, item: ConfigItem) => {
+  const dependsOnFunctionAttributes = item.dependsOn
+    ?.filter((dep) => dep.category === "function")
+    .map((dep) => dep.resourceName);
+
+  if (!dependsOnFunctionAttributes) {
+    return;
+  }
+
+  const functionPath = path.join(process.cwd(), "function", key);
+  let templateFound = false;
+
+  const parameterNames = createParameterName(item.dependsOn);
+  // console.log("Parameter names for function:", key, parameterNames);
+
+  try {
+    const files = await fs.promises.readdir(functionPath);
+    const templateFile = files.find((file) =>
+      file.endsWith("cloudformation-template.json")
+    );
+
+    // if key ends with Layer, then log the key and the template file
+    if (key.endsWith("Layer")) {
+      console.log("Key:", key);
+      console.log("Template file:", templateFile);
+    }
+
+    if (templateFile) {
+      const templatePath = path.join(functionPath, templateFile);
+      const data = await fs.promises.readFile(templatePath, "utf8");
+      const json = JSON.parse(data);
+      templateFound = true;
+      // console.log("Found template for function:", key);
+      const parameters: Parameters = json.Parameters;
+
+      // if (key.endsWith("Layer")) {
+      //   console.log("parameters:", parameters);
+      // }
+
+      for (const name of parameterNames) {
+        if (!parameters[name]) {
+          // console.log("Adding parameter:", name);
+          parameters[name] = {
+            Type: "String",
+            Description: `Parameter for function ${key}`,
+            Default: name,
+          };
+        }
+      }
+
+      if (key.endsWith("Layer")) {
+        console.log("new parameters for function:", parameters);
+      }
+
+      json.Parameters = parameters;
+
+      // console.log("Writing updated template for function:", key);
+
+      await fs.promises
+        .writeFile(templatePath, JSON.stringify(json, null, 2))
+        .then(() => {
+          // console.log("Updated template written for function:", key);
+        });
+    }
+  } catch (err) {
+    console.error("Error reading directory or file:", err);
+  }
+};
+
+const createParameterName = (
+  dependencies: ConfigItem["dependsOn"]
+): string[] => {
+  const names: string[] = [];
+
+  for (const dep of dependencies) {
+    if (dep.category === "function") {
+      for (const attr of dep.attributes) {
+        names.push(`function${dep.resourceName}${attr}`);
+      }
+    }
+  }
+
+  return names;
 };
 
 findConfigFile();
