@@ -95,8 +95,8 @@ const createFunctionalDependencies = (
 
   let dependencyFreeFunctions = keys.filter(
     (key) =>
-      !functions[key].dependsOn ||
-      functions[key].dependsOn.every((dep) => dep.category !== "function") ||
+      (!functions[key].dependsOn ||
+        functions[key].dependsOn.every((dep) => dep.category !== "function")) &&
       !key.endsWith("Layer")
   );
 
@@ -120,8 +120,9 @@ const createFunctionalDependencies = (
   for (const key of keys) {
     const functionConfig = functions[key];
     if (
-      !functionConfig.dependsOn ||
-      functionConfig.dependsOn.every((dep) => dep.category !== "function")
+      (!functionConfig.dependsOn ||
+        functionConfig.dependsOn.every((dep) => dep.category !== "function")) &&
+      !key.endsWith("Layer")
     ) {
       const possibleDependencies = dependencyFreeFunctions.filter(
         (k) => k !== key && !usedDependencies.has(k)
