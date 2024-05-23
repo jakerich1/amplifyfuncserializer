@@ -1,12 +1,19 @@
+#!/usr/bin/env node
 import fs from "fs";
 import path from "path";
 
-// Function to recursively read files
-const readFiles = (dir: string, fileList: string[] = []) => {
+// Function to recursively read files, excluding certain directories
+const readFiles = (
+  dir: string,
+  fileList: string[] = [],
+  excludeDirs: string[] = ["node_modules", "dist"]
+) => {
   fs.readdirSync(dir).forEach((file) => {
     const filePath = path.join(dir, file);
     if (fs.statSync(filePath).isDirectory()) {
-      readFiles(filePath, fileList);
+      if (!excludeDirs.includes(path.basename(filePath))) {
+        readFiles(filePath, fileList, excludeDirs);
+      }
     } else if (
       filePath.endsWith(".js") ||
       filePath.endsWith(".ts") ||
@@ -31,12 +38,24 @@ const countPackages = (files: string[]) => {
 
     while ((matches = requireRegex.exec(content)) !== null) {
       const packageName = matches[1];
-      packageCounts[packageName] = (packageCounts[packageName] || 0) + 1;
+      if (
+        !packageName.startsWith(".") &&
+        !packageName.startsWith("@influenceio") &&
+        !packageName.startsWith("@/")
+      ) {
+        packageCounts[packageName] = (packageCounts[packageName] || 0) + 1;
+      }
     }
 
     while ((matches = importRegex.exec(content)) !== null) {
       const packageName = matches[1];
-      packageCounts[packageName] = (packageCounts[packageName] || 0) + 1;
+      if (
+        !packageName.startsWith(".") &&
+        !packageName.startsWith("@influenceio") &&
+        !packageName.startsWith("@/")
+      ) {
+        packageCounts[packageName] = (packageCounts[packageName] || 0) + 1;
+      }
     }
   });
 
@@ -46,4 +65,13 @@ const countPackages = (files: string[]) => {
 const currentDirectory = process.cwd();
 const files = readFiles(currentDirectory);
 const packageCounts = countPackages(files);
-console.table(packageCounts);
+
+// Sort package counts by occurrences in descending order
+const sortedPackageCounts = Object.entries(packageCounts)
+  .sort(([, countA], [, countB]) => countB - countA)
+  .reduce((acc: Record<string, number>, [key, value]) => {
+    acc[key] = value;
+    return acc;
+  }, {});
+
+console.table(sortedPackageCounts);
